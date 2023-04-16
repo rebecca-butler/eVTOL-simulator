@@ -1,61 +1,79 @@
-#include <string>
+#include <memory>
 
-enum AircraftType {
-    Alpha, Bravo, Charlie, Delta, Echo
-};
+#include "aircraft.h"
 
-class Aircraft {
-public:
-    double cruise_speed;           // mph
-    double battery_capacity;       // kWh
-    double charging_time;          // hours
-    double energy_use;             // kWh/mile
-    double faults_per_hour_prob;
-    int passenger_count;
+Aircraft::Aircraft() {
+    need_charge = false;
+    is_charging = false;
+}
 
-    double current_battery;
-    bool need_charge;
-    bool is_charging;
+AlphaAircraft::AlphaAircraft() {
+    cruise_speed = 120;
+    battery_capacity = 320;
+    charging_time = 0.6;
+    energy_use = 1.6;
+    faults_per_hour_prob = 0.25;
+    passenger_count = 4;
+    current_battery = battery_capacity;
+    type = AircraftType::Alpha;
+}
 
-    Aircraft() {
-        need_charge = false;
-        is_charging = false;
-    }
+BravoAircraft::BravoAircraft() {
+    cruise_speed = 100;
+    battery_capacity = 100;
+    charging_time = 0.2;
+    energy_use = 1.5;
+    faults_per_hour_prob = 0.1;
+    passenger_count = 5;
+    current_battery = battery_capacity;
+    type = AircraftType::Bravo;
+}
 
-    // Factory method
-    static Aircraft* make_aircraft(AircraftType type);
-};
+CharlieAircraft::CharlieAircraft() {
+    cruise_speed = 160;
+    battery_capacity = 220;
+    charging_time = 0.8;
+    energy_use = 2.2;
+    faults_per_hour_prob = 0.05;
+    passenger_count = 3;
+    current_battery = battery_capacity;
+    type = AircraftType::Charlie;
+}
 
-class AlphaAircraft : public Aircraft {
-public:
-    AlphaAircraft() : Aircraft() {
-        cruise_speed = 120;
-        battery_capacity = 320;
-        charging_time = 0.6;
-        energy_use = 1.6;
-        faults_per_hour_prob = 0.25;
-        passenger_count = 4;
-        current_battery = battery_capacity;
-    }
-};
+DeltaAircraft::DeltaAircraft() {
+    cruise_speed = 90;
+    battery_capacity = 220;
+    charging_time = 0.8;
+    energy_use = 2.2;
+    faults_per_hour_prob = 0.22;
+    passenger_count = 2;
+    current_battery = battery_capacity;
+    type = AircraftType::Delta;
+}
 
-class BravoAircraft : public Aircraft {
-public:
-    BravoAircraft() : Aircraft() {
-        cruise_speed = 100;
-        battery_capacity = 100;
-        charging_time = 0.2;
-        energy_use = 1.5;
-        faults_per_hour_prob = 0.1;
-        passenger_count = 5;
-        current_battery = battery_capacity;
-    }
-};
+EchoAircraft::EchoAircraft() {
+    cruise_speed = 30;
+    battery_capacity = 150;
+    charging_time = 0.3;
+    energy_use = 5.8;
+    faults_per_hour_prob = 0.61;
+    passenger_count = 2;
+    current_battery = battery_capacity;
+    type = AircraftType::Echo;
+}
 
-static Aircraft* make_aircraft(AircraftType type) {
+std::shared_ptr<Aircraft> AircraftFactory::create_aircraft(AircraftType type) {
     if (type == Alpha) {
-        return new AlphaAircraft();
+        return std::make_shared<AlphaAircraft>();
     } else if (type == Bravo) {
-        return new BravoAircraft();
+        return std::make_shared<BravoAircraft>();
+    } else if (type == Charlie) {
+        return std::make_shared<CharlieAircraft>();
+    } else if (type == Delta) {
+        return std::make_shared<DeltaAircraft>();
+    } else if (type == Echo) {
+        return std::make_shared<EchoAircraft>();
+    } else {
+        return NULL;
     }
 }
