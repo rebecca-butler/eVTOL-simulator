@@ -3,8 +3,48 @@
 #include "aircraft.h"
 
 Aircraft::Aircraft() {
+    // TODO: add other attributes
     need_charge = false;
     is_charging = false;
+    state = AircraftState::Flying;
+}
+
+void Aircraft::fly(double dt_seconds) {
+    // Compute distance travelled over the timestep
+    // Units: (miles) = (miles/hr) * (sec) * (1 hr / 3600 sec)
+    double distance_miles = cruise_speed * dt_seconds * 1/3600;
+
+    // Update metrics
+    total_flight_time++;
+    total_distance_travelled += distance_miles;
+
+    // Decrease battery level
+    // Units: (kWh) = (kWh/mile) * (miles)
+    current_battery -= energy_use * distance_miles;
+}
+
+void Aircraft::charge() {
+    
+}
+
+void Aircraft::wait() {
+
+}
+
+void Aircraft::transition_state() {
+    // State 1: flying
+    // Check if battery level is below zero
+
+    // Transition to charging state if queue has space, or waiting state if not
+
+    // State 2: charging
+    // Decrease battery level
+
+    // Transition to flying state if battery is full
+
+    // State 3: waiting
+
+    // Transition to charging state if queue has space
 }
 
 AlphaAircraft::AlphaAircraft() {
@@ -14,6 +54,7 @@ AlphaAircraft::AlphaAircraft() {
     energy_use = 1.6;
     faults_per_hour_prob = 0.25;
     passenger_count = 4;
+    
     current_battery = battery_capacity;
     type = AircraftType::Alpha;
 }

@@ -17,6 +17,12 @@ Then run the executable:
 
 `./simulator`
 
+## Assumptions
+- The vehicles instantaneously arrive at the charging station when they need to charge
+- The vehicles must be fully charged before they can resume flight
+- The vehicles were designed with sufficient fault-tolerant measures and fail-safes such that when faults occur, they do not stop the vehicle from operating
+- The vehicles are always carrying the maximum number of passengers
+
 ## Design
 
 ## Testing
@@ -29,3 +35,6 @@ Then run the executable:
 - visualization
 - better scenario configuration (config files)
 - multithreading
+- docstrings
+- state transition diagram
+- getters/setters
