@@ -19,30 +19,25 @@ public:
     int passenger_count;
     AircraftType type;
 
-    // Aircraft charging status
-    double current_battery;
-    bool need_charge;
-    bool is_charging;
-
     // Aircraft state
     AircraftState state;
+    double current_battery;
 
     // Aircraft performance metrics
     int number_flights;
     int number_charges;
     int number_faults;
-    double total_flight_time;           // hours
+    double total_flight_time;           // seconds
+    double total_charging_time;         // seconds
     double total_distance_travelled;    // miles
 
     Aircraft();
 
     void fly(double dt_seconds);
 
-    void charge();
+    void charge(double dt_seconds);
 
-    void wait();
-
-    void transition_state();
+    int transition_state(int& number_aircraft_charging);
 };
 
 class AlphaAircraft : public Aircraft {

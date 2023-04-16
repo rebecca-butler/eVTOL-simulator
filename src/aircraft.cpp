@@ -4,8 +4,6 @@
 
 Aircraft::Aircraft() {
     // TODO: add other attributes
-    need_charge = false;
-    is_charging = false;
     state = AircraftState::Flying;
 }
 
@@ -23,28 +21,47 @@ void Aircraft::fly(double dt_seconds) {
     current_battery -= energy_use * distance_miles;
 }
 
-void Aircraft::charge() {
-    
+void Aircraft::charge(double dt_seconds) {
+    // Increase battery level
+    // Units: (kWh/sec) = (kWh) / (hours) * (1 hr / 3600 sec) 
+    current_battery += battery_capacity / charging_time * 1/3600;
+
+    // Update metrics
+    total_charging_time++;
 }
 
-void Aircraft::wait() {
+int Aircraft::transition_state(int& number_aircraft_charging) {
+    // If currently flying, transition if battery is dead
+    if (state == AircraftState::Flying && current_battery <= 0) {
+        // If a charger is available, transition to charging state. Else transition to waiting state
+        if (number_aircraft_charging < 3) {
+            number_aircraft_charging++;
+            number_charges++;
+            state = AircraftState::Charging;
+        } else {
+            state = AircraftState::Waiting;
+        }
+    }
 
-}
+    // If currently charging, transition if battery is full
+    else if (state == AircraftState::Charging && current_battery >= battery_capacity) {
+        // Transition to flying state
+        number_aircraft_charging--;
+        number_flights++;
+        state = AircraftState::Flying;
+    }
 
-void Aircraft::transition_state() {
-    // State 1: flying
-    // Check if battery level is below zero
+    // If currently waiting, transition if a charger is available
+    else if (state == AircraftState::Waiting) {
+        // Transition to charging state
+        if (number_aircraft_charging < 3) {
+            number_aircraft_charging++;
+            number_charges++;
+            state = AircraftState::Charging;
+        }
+    }
 
-    // Transition to charging state if queue has space, or waiting state if not
-
-    // State 2: charging
-    // Decrease battery level
-
-    // Transition to flying state if battery is full
-
-    // State 3: waiting
-
-    // Transition to charging state if queue has space
+    return number_aircraft_charging;
 }
 
 AlphaAircraft::AlphaAircraft() {
@@ -54,7 +71,6 @@ AlphaAircraft::AlphaAircraft() {
     energy_use = 1.6;
     faults_per_hour_prob = 0.25;
     passenger_count = 4;
-    
     current_battery = battery_capacity;
     type = AircraftType::Alpha;
 }
