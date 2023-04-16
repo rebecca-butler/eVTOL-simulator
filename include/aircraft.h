@@ -5,9 +5,18 @@ enum AircraftType {
 };
 
 enum AircraftState {
-    Flying, Charging, Waiting, Count
+    Flying, Charging, Waiting
 };
 
+struct Metrics {
+    double avg_flight_time = 0;
+    double avg_charging_time = 0;
+    double avg_flight_distance = 0;
+    double total_passenger_miles = 0;
+    double total_faults = 0;
+};
+
+// TODO: move to separate file
 class Aircraft {
 public:
     // Aircraft characteristics
@@ -16,7 +25,7 @@ public:
     double charging_time;          // hours
     double energy_use;             // kWh/mile
     double faults_per_hour_prob;
-    int passenger_count;
+    int number_passengers;
     AircraftType type;
 
     // Aircraft state
@@ -27,17 +36,21 @@ public:
     int number_flights;
     int number_charges;
     int number_faults;
-    double total_flight_time;           // seconds
-    double total_charging_time;         // seconds
+    double total_flight_time;           // hours
+    double total_charging_time;         // hours
     double total_distance_travelled;    // miles
 
     Aircraft();
 
-    void fly(double dt_seconds);
+    void fly(double dt_hours);
 
-    void charge(double dt_seconds);
+    void charge(double dt_hours);
 
     int transition_state(int& number_aircraft_charging);
+
+    Metrics compute_metrics();
+
+    int compute_faults();
 };
 
 class AlphaAircraft : public Aircraft {

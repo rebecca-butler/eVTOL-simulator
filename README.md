@@ -18,9 +18,10 @@ Then run the executable:
 `./simulator`
 
 ## Assumptions
-- The vehicles instantaneously arrive at the charging station when they need to charge
-- The vehicles must be fully charged before they can resume flight
-- The vehicles were designed with sufficient fault-tolerant measures and fail-safes such that when faults occur, they do not stop the vehicle from operating
+- The vehicles can instantaneously change between flying, charging, and waiting states
+- When charging, the vehicles must be fully charged before they can resume flight
+- Faults can only occur when the vehicles are flying, not when they are or charging or waiting
+- When faults occur, there are sufficient fault-tolerant measures and fail-safes such that vehicles do not stop operating
 - The vehicles are always carrying the maximum number of passengers
 
 ## Design
