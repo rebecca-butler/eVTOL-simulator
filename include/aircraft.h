@@ -28,9 +28,9 @@ public:
 
     bool is_battery_full();
 
-    void fly(double dt_hours);
+    void fly(double dt);
 
-    void charge(double dt_hours);
+    void charge(double dt);
 
     Metrics compute_metrics();
 

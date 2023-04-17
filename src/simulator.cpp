@@ -9,15 +9,20 @@
 #include "aircraft_factory.h"
 #include "charging_station.h"
 
-// TODO: make this into a class
+struct SimParams {
+    int number_vehicles;
+    int number_chargers;
+    double dt;              // simulation timestep (hours)
+    double sim_length;      // simulation total length (hours)
+};
 
-void update_aircraft(std::shared_ptr<Aircraft> aircraft, ChargingStation& charging_station, double dt_hours) {
+void update_aircraft(std::shared_ptr<Aircraft> aircraft, ChargingStation& charging_station, double dt) {
     // Complete flying action or charging action
     if (aircraft->get_state() == AircraftState::Flying) {
-        aircraft->fly(dt_hours);
+        aircraft->fly(dt);
     } 
     else if (aircraft->get_state() == AircraftState::Charging) {
-        aircraft->charge(dt_hours);
+        aircraft->charge(dt);
     }
 
     // If aircraft is flying and battery is dead, transition Flying -> Charging or Waiting
@@ -50,20 +55,31 @@ void update_aircraft(std::shared_ptr<Aircraft> aircraft, ChargingStation& chargi
     }
 }
 
-void run_simulation(std::array<std::shared_ptr<Aircraft>, 20>& vehicles) {
-    // Run simulation for 3 hours with timestep of 1 second (1/3600 hours)
-    double simulation_length_hours = 3.0;
-    double dt_hours = 1.0 / 3600.0;
+std::vector<std::vector<Metrics>> run_simulation(SimParams& sim_params) {
+    ChargingStation charging_station(sim_params.number_chargers);
+    std::vector<std::shared_ptr<Aircraft>> vehicles;
+    std::vector<std::vector<Metrics>> metrics_by_vehicle_type;
 
-    int number_chargers = 3;
-    ChargingStation charging_station(number_chargers);
+    // Randomly select aircraft types and create vehicles
+    for (int i = 0; i < sim_params.number_vehicles; i++) {
+        AircraftType type = static_cast<AircraftType>(rand() % AircraftType::Count);
+        vehicles[i] = AircraftFactory::create_aircraft(type);
+    }
 
     // Update each vehicle at every timestep
-    for (double i = 0; i < simulation_length_hours; i += dt_hours) {
-        for (auto aircraft : vehicles) {
-            update_aircraft(aircraft, charging_station, dt_hours);
+    for (double i = 0; i < sim_params.sim_length; i += sim_params.dt) {
+        for (const auto& aircraft : vehicles) {
+            update_aircraft(aircraft, charging_station, sim_params.dt);
         }
     }
+
+    // Compute metrics for each vehicle and store by vehicle type
+    for (const auto& vehicle : vehicles) {
+        Metrics metrics = vehicle->compute_metrics();
+        metrics_by_vehicle_type[vehicle->get_type()].push_back(metrics);
+    }
+
+    return metrics_by_vehicle_type;
 }
 
 std::string format_time(double hours) {
@@ -85,16 +101,8 @@ void print_row(std::string aircraft_name, Metrics metrics) {
               << std::setw(18) << metrics.total_passenger_miles << std::endl;
 }
 
-
-void print_results(std::array<std::shared_ptr<Aircraft>, 20>& vehicles) {
-    std::array<std::vector<Metrics>, 5> metrics_by_aircraft_type;
+void print_results(std::vector<std::vector<Metrics>>& metrics) {
     std::array<std::string, 5> enum_strings = {"Alpha", "Bravo", "Charlie", "Delta", "Echo"};
-
-    // Compute metrics for each vehicle and store by vehicle type
-    for (const auto vehicle : vehicles) {
-        Metrics metrics = vehicle->compute_metrics();
-        metrics_by_aircraft_type[vehicle->get_type()].push_back(metrics);
-    }
 
     // Print table header
     std::cout << std::setw(15) << "Name"
@@ -105,26 +113,25 @@ void print_results(std::array<std::shared_ptr<Aircraft>, 20>& vehicles) {
               << std::setw(18) << "Passenger Miles" << std::endl;
 
     // Iterate over metrics for each type of aircraft
-    for (int i = 0; i < metrics_by_aircraft_type.size(); i++) {
-        for (int j = 0; j < metrics_by_aircraft_type[i].size(); j++) {
+    for (int i = 0; i < metrics.size(); i++) {
+        for (int j = 0; j < metrics[i].size(); j++) {
             std::string aircraft_name = enum_strings[i] + " " + std::to_string(j);
-            print_row(aircraft_name, metrics_by_aircraft_type[i][j]);
+            print_row(aircraft_name, metrics[i][j]);
         }
     }
 }
 
 int main() {
-    int number_vehicles = 20;
-    std::array<std::shared_ptr<Aircraft>, 20> vehicles;
+    // Set up simulation with 20 vehicles, 3 chargers, 1 second timestep, and 3 hours total length
+    SimParams sim_params = {
+        .number_vehicles = 20,
+        .number_chargers = 3,
+        .dt = 1.0 / 3600.0,
+        .sim_length = 3.0
+    };
 
-    for (int i = 0; i < number_vehicles; i++) {
-        // Randomly select an aircraft type and create object
-        AircraftType type = static_cast<AircraftType>(rand() % AircraftType::Count);
-        vehicles[i] = AircraftFactory::create_aircraft(type);
-    }
-
-    run_simulation(vehicles);
-    print_results(vehicles);
+    std::vector<std::vector<Metrics>> metrics = run_simulation(sim_params);
+    print_results(metrics);
 
     return 0;
 }

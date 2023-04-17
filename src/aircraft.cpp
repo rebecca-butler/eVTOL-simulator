@@ -42,12 +42,12 @@ bool Aircraft::is_battery_dead() {
     return current_battery <= 0;
 }
 
-void Aircraft::fly(double dt_hours) {
+void Aircraft::fly(double dt) {
     // Compute distance travelled over the timestep. Units: (miles) = (miles/hr) * (hr)
-    double distance = cruise_speed * dt_hours;
+    double distance = cruise_speed * dt;
 
     // Update metrics
-    total_flight_time += dt_hours;
+    total_flight_time += dt;
     total_distance_travelled += distance;
 
     // Decrease battery level. Units: (kWh) = (kWh/mile) * (miles)
@@ -55,17 +55,17 @@ void Aircraft::fly(double dt_hours) {
     current_battery = std::max(current_battery, 0.0);
 }
 
-void Aircraft::charge(double dt_hours) {
+void Aircraft::charge(double dt) {
     // Increase battery level. Units: (kWh/sec) = (kWh) / (hours) * (1 hr / 3600 sec) 
-    current_battery += battery_capacity / charging_time * 1/3600;
+    current_battery += battery_capacity / charging_time / 3600.0;
     current_battery = std::min(current_battery, battery_capacity);
 
     // Update metrics
-    total_charging_time += dt_hours;
+    total_charging_time += dt;
 }
 
 int Aircraft::compute_faults() {
-    // Compute number of faults using Poisson distribution and expected chance of faults
+    // Compute number of faults using Poisson distribution and probability of faults
     double expected_faults = faults_per_hour_prob * total_flight_time;
     std::poisson_distribution<int> distribution(expected_faults);
     std::mt19937 generator(std::random_device{}());
