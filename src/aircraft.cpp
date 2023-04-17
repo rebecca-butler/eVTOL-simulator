@@ -39,8 +39,8 @@ void Aircraft::fly(double dt) {
 }
 
 void Aircraft::charge(double dt) {
-    // Increase battery level. Units: (kWh/sec) = (kWh) / (hours) * (1 hr / 3600 sec) 
-    current_battery += battery_capacity / charging_time / 3600.0;
+    // Increase battery level. Units: (kWh) = (kWh) / (hr) * (hr) 
+    current_battery += battery_capacity / charging_time * dt;
     current_battery = std::min(current_battery, battery_capacity);
 
     // Update metrics
