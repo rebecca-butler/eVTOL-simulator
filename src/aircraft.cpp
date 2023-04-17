@@ -26,50 +26,17 @@ void Aircraft::fly(double dt_hours) {
     // Decrease battery level
     // Units: (kWh) = (kWh/mile) * (miles)
     current_battery -= energy_use * distance_miles;
+    // current_battery = std::min(current_battery, 0.0);
 }
 
 void Aircraft::charge(double dt_hours) {
     // Increase battery level
     // Units: (kWh/sec) = (kWh) / (hours) * (1 hr / 3600 sec) 
     current_battery += battery_capacity / charging_time * 1/3600;
+    // current_battery = std::max(current_battery, battery_capacity);
 
     // Update metrics
     total_charging_time += dt_hours;
-}
-
-int Aircraft::transition_state(int& number_aircraft_charging) {
-    // If currently flying, transition if battery is dead
-    if (state == AircraftState::Flying && current_battery <= 0) {
-        // If a charger is available, transition to charging state. Else transition to waiting state
-        if (number_aircraft_charging < 3) {
-            number_aircraft_charging++;
-            number_charges++;
-            state = AircraftState::Charging;
-        } else {
-            state = AircraftState::Waiting;
-        }
-    }
-
-    // If currently charging, transition if battery is full
-    else if (state == AircraftState::Charging && current_battery >= battery_capacity) {
-        // Transition to flying state
-        number_aircraft_charging--;
-        number_flights++;
-        state = AircraftState::Flying;
-    }
-
-    // If currently waiting, transition if a charger is available
-    // TODO: plane should only be able to charge if it's next in line in the queue
-    else if (state == AircraftState::Waiting) {
-        // Transition to charging state
-        if (number_aircraft_charging < 3) {
-            number_aircraft_charging++;
-            number_charges++;
-            state = AircraftState::Charging;
-        }
-    }
-
-    return number_aircraft_charging;
 }
 
 int Aircraft::compute_faults() {
@@ -83,7 +50,7 @@ int Aircraft::compute_faults() {
 Metrics Aircraft::compute_metrics() {
     Metrics metrics;
     metrics.avg_flight_time = total_flight_time / number_flights;
-    metrics.avg_charging_time = total_charging_time / number_charges;
+    metrics.avg_charging_time = (number_charges == 0) ? 0 : (total_charging_time / number_charges);
     metrics.avg_flight_distance = total_distance_travelled / number_flights;
     metrics.total_passenger_miles = total_distance_travelled * number_passengers;
     metrics.total_faults = compute_faults();

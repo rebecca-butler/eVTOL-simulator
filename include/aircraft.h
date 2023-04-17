@@ -1,3 +1,5 @@
+#pragma once
+
 #include <memory>
 
 enum AircraftType {
@@ -45,8 +47,6 @@ public:
     void fly(double dt_hours);
 
     void charge(double dt_hours);
-
-    int transition_state(int& number_aircraft_charging);
 
     Metrics compute_metrics();
 

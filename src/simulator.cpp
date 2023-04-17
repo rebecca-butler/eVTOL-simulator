@@ -6,8 +6,11 @@
 #include <vector>
 
 #include "aircraft.h"
+#include "charging_station.h"
 
-void update_aircraft(std::shared_ptr<Aircraft> aircraft, double dt_hours, int number_aircraft_charging) {
+// TODO: make this into a class
+
+void update_aircraft(std::shared_ptr<Aircraft> aircraft, ChargingStation& charging_station, double dt_hours) {
     // TODO: implement a getter for the state
     if (aircraft->state == AircraftState::Flying) {
         aircraft->fly(dt_hours);
@@ -18,21 +21,52 @@ void update_aircraft(std::shared_ptr<Aircraft> aircraft, double dt_hours, int nu
     }
 
     // After completing the update, transition to new state if applicable
-    // TODO: don't return number_aircraft_charging, it's confusing. Find different way to update
-    number_aircraft_charging = aircraft->transition_state(number_aircraft_charging);
+
+    // If currently flying, transition if battery is dead
+    if (aircraft->state == AircraftState::Flying && aircraft->current_battery <= 0) {
+        // If a charger is available, transition to charging state. Else transition to waiting state and enter queue
+        if (charging_station.is_charger_available()) {
+            charging_station.add_to_charger();
+            aircraft->number_charges++;
+            aircraft->state = AircraftState::Charging;
+        } else {
+            charging_station.add_to_queue(aircraft);
+            aircraft->state = AircraftState::Waiting;
+        }
+    }
+
+    // If currently charging, transition if battery is full
+    else if (aircraft->state == AircraftState::Charging && aircraft->current_battery >= aircraft->battery_capacity) {
+        // Transition to flying state
+        charging_station.remove_from_charger();
+        aircraft->number_flights++;
+        aircraft->state = AircraftState::Flying;
+    }
+
+    // If currently waiting, transition if a charger is available
+    else if (aircraft->state == AircraftState::Waiting && charging_station.is_charger_available()) {
+        // Transition to charging state if next in line
+        if (charging_station.get_next_in_queue() == aircraft) {
+            charging_station.remove_from_queue();
+            charging_station.add_to_charger();
+            aircraft->number_charges++;
+            aircraft->state = AircraftState::Charging;
+        }
+    }
 }
 
 void run_simulation(std::array<std::shared_ptr<Aircraft>, 20>& vehicles) {
     // Run simulation for 3 hours with timestep of 1 second (1/3600 hours)
-    double simulation_length_hours = 3;
+    double simulation_length_hours = 3.0;
     double dt_hours = 1.0 / 3600.0;
 
-    int number_aircraft_charging = 0;
+    int number_chargers = 3;
+    ChargingStation charging_station(number_chargers);
 
     // Update each vehicle at every timestep
     for (double i = 0; i < simulation_length_hours; i += dt_hours) {
         for (auto aircraft : vehicles) {
-            update_aircraft(aircraft, dt_hours, number_aircraft_charging);
+            update_aircraft(aircraft, charging_station, dt_hours);
         }
     }
 }
@@ -46,7 +80,7 @@ std::string format_time(double hours) {
     return oss.str();
 }
 
-void print_row( std::string aircraft_name, Metrics metrics) {
+void print_row(std::string aircraft_name, Metrics metrics) {
     std::cout << std::setw(15) << aircraft_name
               << std::fixed << std::setprecision(1)
               << std::setw(18) << format_time(metrics.avg_flight_time)
