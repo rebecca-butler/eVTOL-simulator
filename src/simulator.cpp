@@ -16,60 +16,21 @@ struct SimParams {
     double sim_length;      // simulation total length (hours)
 };
 
-void update_aircraft(std::shared_ptr<Aircraft> aircraft, ChargingStation& charging_station, double dt) {
-    // Complete flying action or charging action
-    if (aircraft->get_state() == AircraftState::Flying) {
-        aircraft->fly(dt);
-    } 
-    else if (aircraft->get_state() == AircraftState::Charging) {
-        aircraft->charge(dt);
-    }
-
-    // If aircraft is flying and battery is dead, transition Flying -> Charging or Waiting
-    if (aircraft->get_state() == AircraftState::Flying && aircraft->is_battery_dead()) {
-        // If a charger is available, transition to charging
-        if (charging_station.is_charger_available()) {
-            charging_station.add_to_charger();
-            aircraft->set_state(AircraftState::Charging);
-        } 
-        // If no charger is available, transition to waiting and enter queue
-        else {
-            charging_station.add_to_queue(aircraft);
-            aircraft->set_state(AircraftState::Waiting);
-        }
-    }
-
-    // If aircraft is charging and battery is full, transition Charging -> Flying
-    else if (aircraft->get_state() == AircraftState::Charging && aircraft->is_battery_full()) {
-        charging_station.remove_from_charger();
-        aircraft->set_state(AircraftState::Flying);
-    }
-
-    // If aircraft is waiting, a charger is available, and it's next in line in the queue, transition Waiting -> Flying
-    else if (aircraft->get_state() == AircraftState::Waiting && charging_station.is_charger_available()) {
-        if (charging_station.get_next_in_queue() == aircraft) {
-            charging_station.remove_from_queue();
-            charging_station.add_to_charger();
-            aircraft->set_state(AircraftState::Charging);
-        }
-    }
-}
-
 std::vector<std::vector<Metrics>> run_simulation(SimParams& sim_params) {
     ChargingStation charging_station(sim_params.number_chargers);
     std::vector<std::shared_ptr<Aircraft>> vehicles;
-    std::vector<std::vector<Metrics>> metrics_by_vehicle_type;
+    std::vector<std::vector<Metrics>> metrics_by_vehicle_type(AircraftType::Count);
 
     // Randomly select aircraft types and create vehicles
     for (int i = 0; i < sim_params.number_vehicles; i++) {
         AircraftType type = static_cast<AircraftType>(rand() % AircraftType::Count);
-        vehicles[i] = AircraftFactory::create_aircraft(type);
+        vehicles.push_back(AircraftFactory::create_aircraft(type));
     }
 
     // Update each vehicle at every timestep
     for (double i = 0; i < sim_params.sim_length; i += sim_params.dt) {
         for (const auto& aircraft : vehicles) {
-            update_aircraft(aircraft, charging_station, sim_params.dt);
+            aircraft->update_state(charging_station, sim_params.dt);
         }
     }
 
@@ -102,7 +63,7 @@ void print_row(std::string aircraft_name, Metrics metrics) {
 }
 
 void print_results(std::vector<std::vector<Metrics>>& metrics) {
-    std::array<std::string, 5> enum_strings = {"Alpha", "Bravo", "Charlie", "Delta", "Echo"};
+    std::array<std::string, AircraftType::Count> enum_strings = {"Alpha", "Bravo", "Charlie", "Delta", "Echo"};
 
     // Print table header
     std::cout << std::setw(15) << "Name"

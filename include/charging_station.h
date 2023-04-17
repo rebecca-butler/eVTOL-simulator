@@ -3,7 +3,7 @@
 #include <memory>
 #include <queue>
 
-#include "aircraft.h"
+class Aircraft; // forward declaration
 
 class ChargingStation {
 public:

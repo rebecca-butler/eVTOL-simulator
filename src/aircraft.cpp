@@ -1,6 +1,7 @@
 #include <random>
 
 #include "aircraft.h"
+#include "charging_station.h"
 
 Aircraft::Aircraft() {
     state = AircraftState::Flying;
@@ -10,24 +11,6 @@ Aircraft::Aircraft() {
     total_flight_time = 0;
     total_charging_time = 0;
     total_distance_travelled = 0;
-}
-
-AircraftState Aircraft::get_state() {
-    return state;
-}
-
-void Aircraft::set_state(AircraftState state_) {
-    state = state_;
-
-    // If state is set to flying, increase the number of flights taken
-    if (state == AircraftState::Flying) {
-        number_flights++;
-    }
-
-    // If state is set to charging, increase the number of times charging
-    if (state == AircraftState::Charging) {
-        number_charges++;
-    }
 }
 
 AircraftType Aircraft::get_type() {
@@ -62,6 +45,48 @@ void Aircraft::charge(double dt) {
 
     // Update metrics
     total_charging_time += dt;
+}
+
+void Aircraft::update_state(ChargingStation& charging_station, double dt) {
+    // Complete flying action or charging action
+    if (state == AircraftState::Flying) {
+        fly(dt);
+    } 
+    else if (state == AircraftState::Charging) {
+        charge(dt);
+    }
+
+    // If aircraft is flying and battery is dead, transition Flying -> Charging or Waiting
+    if (state == AircraftState::Flying && is_battery_dead()) {
+        // If a charger is available, transition to charging
+        if (charging_station.is_charger_available()) {
+            charging_station.add_to_charger();
+            number_charges++;
+            state = AircraftState::Charging;
+        } 
+        // If no charger is available, transition to waiting and enter queue
+        else {
+            charging_station.add_to_queue(shared_from_this());
+            state = AircraftState::Waiting;
+        }
+    }
+
+    // If aircraft is charging and battery is full, transition Charging -> Flying
+    else if (state == AircraftState::Charging && is_battery_full()) {
+        charging_station.remove_from_charger();
+        number_flights++;
+        state = AircraftState::Flying;
+    }
+
+    // If aircraft is waiting, a charger is available, and it's next in line in the queue, transition Waiting -> Flying
+    else if (state == AircraftState::Waiting && charging_station.is_charger_available()) {
+        if (charging_station.get_next_in_queue() == shared_from_this()) {
+            charging_station.remove_from_queue();
+            charging_station.add_to_charger();
+            number_charges++;
+            state = AircraftState::Charging;
+        }
+    }
 }
 
 int Aircraft::compute_faults() {
