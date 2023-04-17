@@ -6,51 +6,46 @@
 #include <vector>
 
 #include "aircraft.h"
+#include "aircraft_factory.h"
 #include "charging_station.h"
 
 // TODO: make this into a class
 
 void update_aircraft(std::shared_ptr<Aircraft> aircraft, ChargingStation& charging_station, double dt_hours) {
-    // TODO: implement a getter for the state
-    if (aircraft->state == AircraftState::Flying) {
+    // Complete flying action or charging action
+    if (aircraft->get_state() == AircraftState::Flying) {
         aircraft->fly(dt_hours);
     } 
-
-    else if (aircraft->state == AircraftState::Charging) {
+    else if (aircraft->get_state() == AircraftState::Charging) {
         aircraft->charge(dt_hours);
     }
 
-    // After completing the update, transition to new state if applicable
-
-    // If currently flying, transition if battery is dead
-    if (aircraft->state == AircraftState::Flying && aircraft->current_battery <= 0) {
-        // If a charger is available, transition to charging state. Else transition to waiting state and enter queue
+    // If aircraft is flying and battery is dead, transition Flying -> Charging or Waiting
+    if (aircraft->get_state() == AircraftState::Flying && aircraft->is_battery_dead()) {
+        // If a charger is available, transition to charging
         if (charging_station.is_charger_available()) {
             charging_station.add_to_charger();
-            aircraft->number_charges++;
-            aircraft->state = AircraftState::Charging;
-        } else {
+            aircraft->set_state(AircraftState::Charging);
+        } 
+        // If no charger is available, transition to waiting and enter queue
+        else {
             charging_station.add_to_queue(aircraft);
-            aircraft->state = AircraftState::Waiting;
+            aircraft->set_state(AircraftState::Waiting);
         }
     }
 
-    // If currently charging, transition if battery is full
-    else if (aircraft->state == AircraftState::Charging && aircraft->current_battery >= aircraft->battery_capacity) {
-        // Transition to flying state
+    // If aircraft is charging and battery is full, transition Charging -> Flying
+    else if (aircraft->get_state() == AircraftState::Charging && aircraft->is_battery_full()) {
         charging_station.remove_from_charger();
-        aircraft->number_flights++;
-        aircraft->state = AircraftState::Flying;
+        aircraft->set_state(AircraftState::Flying);
     }
 
-    // If currently waiting, transition if a charger is available
-    else if (aircraft->state == AircraftState::Waiting && charging_station.is_charger_available()) {
-        // Transition to charging state if next in line
+    // If aircraft is waiting, a charger is available, and it's next in line in the queue, transition Waiting -> Flying
+    else if (aircraft->get_state() == AircraftState::Waiting && charging_station.is_charger_available()) {
         if (charging_station.get_next_in_queue() == aircraft) {
             charging_station.remove_from_queue();
             charging_station.add_to_charger();
-            aircraft->number_charges++;
-            aircraft->state = AircraftState::Charging;
+            aircraft->set_state(AircraftState::Charging);
         }
     }
 }
@@ -93,11 +88,12 @@ void print_row(std::string aircraft_name, Metrics metrics) {
 
 void print_results(std::array<std::shared_ptr<Aircraft>, 20>& vehicles) {
     std::array<std::vector<Metrics>, 5> metrics_by_aircraft_type;
+    std::array<std::string, 5> enum_strings = {"Alpha", "Bravo", "Charlie", "Delta", "Echo"};
 
     // Compute metrics for each vehicle and store by vehicle type
     for (const auto vehicle : vehicles) {
         Metrics metrics = vehicle->compute_metrics();
-        metrics_by_aircraft_type[vehicle->type].push_back(metrics);
+        metrics_by_aircraft_type[vehicle->get_type()].push_back(metrics);
     }
 
     // Print table header
@@ -108,9 +104,7 @@ void print_results(std::array<std::shared_ptr<Aircraft>, 20>& vehicles) {
               << std::setw(10) << "Faults"
               << std::setw(18) << "Passenger Miles" << std::endl;
 
-    std::array<std::string, 5> enum_strings = {"Alpha", "Bravo", "Charlie", "Delta", "Echo"};
-
-    // Iterate over metrics by type
+    // Iterate over metrics for each type of aircraft
     for (int i = 0; i < metrics_by_aircraft_type.size(); i++) {
         for (int j = 0; j < metrics_by_aircraft_type[i].size(); j++) {
             std::string aircraft_name = enum_strings[i] + " " + std::to_string(j);

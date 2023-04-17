@@ -1,8 +1,6 @@
 #include <assert.h>
 
 #include "aircraft.h"
-
-
 #include "charging_station.h"
 
 ChargingStation::ChargingStation(int number_chargers_) {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 enum AircraftType {
     Alpha, Bravo, Charlie, Delta, Echo, Count
 };
@@ -18,9 +16,29 @@ struct Metrics {
     double total_faults = 0;
 };
 
-// TODO: move to separate file
 class Aircraft {
 public:
+    AircraftState get_state();
+
+    void set_state(AircraftState state_);
+
+    AircraftType get_type();
+
+    bool is_battery_dead();
+
+    bool is_battery_full();
+
+    void fly(double dt_hours);
+
+    void charge(double dt_hours);
+
+    Metrics compute_metrics();
+
+    int compute_faults();
+
+protected:
+    Aircraft();
+
     // Aircraft characteristics
     double cruise_speed;           // mph
     double battery_capacity;       // kWh
@@ -41,44 +59,4 @@ public:
     double total_flight_time;           // hours
     double total_charging_time;         // hours
     double total_distance_travelled;    // miles
-
-    Aircraft();
-
-    void fly(double dt_hours);
-
-    void charge(double dt_hours);
-
-    Metrics compute_metrics();
-
-    int compute_faults();
-};
-
-class AlphaAircraft : public Aircraft {
-public:
-    AlphaAircraft();
-};
-
-class BravoAircraft : public Aircraft {
-public:
-    BravoAircraft();
-};
-
-class CharlieAircraft : public Aircraft {
-public:
-    CharlieAircraft();
-};
-
-class DeltaAircraft : public Aircraft {
-public:
-    DeltaAircraft();
-};
-
-class EchoAircraft : public Aircraft {
-public:
-    EchoAircraft();
-};
-
-class AircraftFactory {
-public:
-    static std::shared_ptr<Aircraft> create_aircraft(AircraftType type);
 };

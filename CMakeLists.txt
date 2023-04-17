@@ -6,6 +6,7 @@ project(evtol_simulator)
 # Create library using src files
 add_library(simulator_lib 
     src/aircraft.cpp
+    src/aircraft_factory.cpp
     src/charging_station.cpp
     src/simulator.cpp
 )
