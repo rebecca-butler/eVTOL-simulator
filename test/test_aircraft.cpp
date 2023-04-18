@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <memory>
 
 #include "aircraft.h"
 #include "charging_station.h"
@@ -14,10 +15,6 @@ public:
         faults_per_hour_prob = 0.5;
         number_passengers = 2;
         current_battery = battery_capacity;
-    }
-
-    AircraftState get_state() {
-        return state;
     }
 
     double get_total_distance_travelled() { 
@@ -71,17 +68,23 @@ TEST(AircraftTest, Charge) {
 
 TEST(AircraftTest, StateTransition) {
     // Create a test aircraft and charging station with 1 charger
-    TestAircraft aircraft;
+    std::shared_ptr<TestAircraft> aircraft = std::make_shared<TestAircraft>();
     ChargingStation charging_station(1);
 
-    // After flying for 1.2 hours, aircraft should start charging
-    EXPECT_TRUE(aircraft.get_state() == AircraftState::Flying);
-    aircraft.update_state(charging_station, 1.2);
-    EXPECT_TRUE(aircraft.get_state() == AircraftState::Charging);
+    // After flying for 1.2 hours, aircraft should transition to OutOfBattery state
+    EXPECT_TRUE(aircraft->get_state() == AircraftState::Flying);
+    aircraft->update_state(1.2);
+    EXPECT_TRUE(aircraft->get_state() == AircraftState::OutOfBattery);
 
-    // After charging for 0.6 hours, aircraft should start flying
-    aircraft.update_state(charging_station, 0.6);
-    EXPECT_TRUE(aircraft.get_state() == AircraftState::Flying);
+    // After being added to charging queue, aircraft should transition to Charging state
+    charging_station.add_to_queue(aircraft);
+    charging_station.update();
+    EXPECT_TRUE(aircraft->get_state() == AircraftState::Charging);
+
+    // After charging for 0.6 hours, aircraft should transition to Flying state
+    aircraft->update_state(0.6);
+    charging_station.update();
+    EXPECT_TRUE(aircraft->get_state() == AircraftState::Flying);
 }
 
 int main(int argc, char **argv) {
