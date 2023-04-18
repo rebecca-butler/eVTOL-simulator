@@ -1,7 +1,6 @@
 #include <random>
 
 #include "aircraft.h"
-#include "charging_station.h"
 
 Aircraft::Aircraft() {
     state = AircraftState::Flying;
@@ -17,12 +16,20 @@ AircraftType Aircraft::get_type() {
     return type;
 }
 
+AircraftState Aircraft::get_state() {
+    return state;
+}
+
+void Aircraft::set_state(AircraftState state_){
+    state = state_;
+}
+
 bool Aircraft::is_battery_full() {
-    return current_battery >= battery_capacity;
+    return current_battery == battery_capacity;
 }
 
 bool Aircraft::is_battery_dead() {
-    return current_battery <= 0;
+    return current_battery == 0;
 }
 
 void Aircraft::fly(double dt) {
@@ -39,6 +46,11 @@ void Aircraft::fly(double dt) {
 }
 
 void Aircraft::charge(double dt) {
+    // If battery is dead, this is the start of a new charging cycle. Increment number of times charged
+    if (is_battery_dead()) {
+        number_charges++;
+    }
+
     // Increase battery level. Units: (kWh) = (kWh) / (hr) * (hr) 
     current_battery += battery_capacity / charging_time * dt;
     current_battery = std::min(current_battery, battery_capacity);
@@ -47,7 +59,7 @@ void Aircraft::charge(double dt) {
     total_charging_time += dt;
 }
 
-void Aircraft::update_state(ChargingStation& charging_station, double dt) {
+void Aircraft::update_state(double dt) {
     // Complete flying action or charging action
     if (state == AircraftState::Flying) {
         fly(dt);
@@ -56,36 +68,15 @@ void Aircraft::update_state(ChargingStation& charging_station, double dt) {
         charge(dt);
     }
 
-    // If aircraft is flying and battery is dead, transition Flying -> Charging or Waiting
+    // If aircraft is flying and battery is dead, transition Flying -> OutOfBattery
     if (state == AircraftState::Flying && is_battery_dead()) {
-        // If a charger is available, transition to charging
-        if (charging_station.is_charger_available()) {
-            charging_station.add_to_charger();
-            number_charges++;
-            state = AircraftState::Charging;
-        } 
-        // If no charger is available, transition to waiting and enter queue
-        else {
-            charging_station.add_to_queue(shared_from_this());
-            state = AircraftState::Waiting;
-        }
+        state = AircraftState::OutOfBattery;
     }
 
     // If aircraft is charging and battery is full, transition Charging -> Flying
     else if (state == AircraftState::Charging && is_battery_full()) {
-        charging_station.remove_from_charger();
         number_flights++;
         state = AircraftState::Flying;
-    }
-
-    // If aircraft is waiting, a charger is available, and it's next in line in the queue, transition Waiting -> Flying
-    else if (state == AircraftState::Waiting && charging_station.is_charger_available()) {
-        if (charging_station.get_next_in_queue() == shared_from_this()) {
-            charging_station.remove_from_queue();
-            charging_station.add_to_charger();
-            number_charges++;
-            state = AircraftState::Charging;
-        }
     }
 }
 
@@ -99,6 +90,8 @@ int Aircraft::compute_faults() {
 
 Metrics Aircraft::compute_metrics() {
     Metrics metrics;
+    metrics.number_flights = number_flights;
+    metrics.number_charges = number_charges;
     metrics.avg_flight_time = total_flight_time / number_flights;
     metrics.avg_charging_time = (number_charges == 0) ? 0 : (total_charging_time / number_charges);
     metrics.avg_flight_distance = total_distance_travelled / number_flights;

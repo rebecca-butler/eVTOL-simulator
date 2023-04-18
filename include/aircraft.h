@@ -1,15 +1,11 @@
 #pragma once
 
-#include <memory>
-
-class ChargingStation; // forward declaration
-
 enum AircraftType {
     Alpha, Bravo, Charlie, Delta, Echo, Count
 };
 
 enum AircraftState {
-    Flying, Charging, Waiting
+    Flying, Charging, OutOfBattery, InQueue
 };
 
 struct Metrics {
@@ -18,11 +14,17 @@ struct Metrics {
     double avg_flight_distance = 0;
     double total_passenger_miles = 0;
     double total_faults = 0;
+    int number_flights = 0;
+    int number_charges = 0;
 };
 
-class Aircraft : public std::enable_shared_from_this<Aircraft> {
+class Aircraft {
 public:
     AircraftType get_type();
+
+    AircraftState get_state();
+
+    void set_state(AircraftState state);
 
     bool is_battery_dead();
 
@@ -32,7 +34,7 @@ public:
 
     void charge(double dt);
 
-    void update_state(ChargingStation& charging_station, double dt);
+    void update_state(double dt);
 
     Metrics compute_metrics();
 
@@ -54,7 +56,7 @@ protected:
     AircraftState state;
     double current_battery;
 
-    // Aircraft performance metrics
+    // Aircraft performance stats
     int number_flights;
     int number_charges;
     int number_faults;

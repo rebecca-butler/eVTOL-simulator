@@ -1,35 +1,30 @@
-#include <assert.h>
-
 #include "aircraft.h"
 #include "charging_station.h"
 
 ChargingStation::ChargingStation(int number_chargers_) {
     number_chargers = number_chargers_;
-    number_aircraft_charging = 0;
-}
-
-void ChargingStation::add_to_charger() {
-    assert(is_charger_available());
-    number_aircraft_charging++;
-}
-
-void ChargingStation::remove_from_charger() {
-    assert(number_aircraft_charging > 0);
-    number_aircraft_charging--;
+    charging_aircraft.resize(number_chargers, nullptr);
 }
 
 void ChargingStation::add_to_queue(std::shared_ptr<Aircraft> aircraft) {
-    queue.push(aircraft);
+    waiting_queue.push(aircraft);
 }
 
-void ChargingStation::remove_from_queue() {
-    queue.pop();
-}
+void ChargingStation::update() {
+    // Update the state of charging aircraft and remove any that are finished charging
+    for (int i = 0; i < number_chargers; i++) {
+        std::shared_ptr<Aircraft> aircraft = charging_aircraft[i];
+        if (aircraft != nullptr && aircraft->get_state() == AircraftState::Flying) {
+            charging_aircraft[i] = nullptr;
+        }
+    }
 
-std::shared_ptr<Aircraft> ChargingStation::get_next_in_queue() {
-    return queue.front();
-}
-
-bool ChargingStation::is_charger_available() {
-    return number_aircraft_charging < number_chargers;
+    // Add waiting aircraft to available chargers
+    for (int i = 0; i < number_chargers; i++) {
+        if (charging_aircraft[i] == nullptr && !waiting_queue.empty()) {
+            charging_aircraft[i] = waiting_queue.front();
+            charging_aircraft[i]->set_state(AircraftState::Charging);
+            waiting_queue.pop();
+        }
+    }
 }

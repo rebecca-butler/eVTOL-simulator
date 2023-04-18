@@ -29,9 +29,14 @@ std::vector<std::vector<Metrics>> run_simulation(SimParams& sim_params) {
 
     // Update each vehicle at every timestep
     for (double i = 0; i < sim_params.sim_length; i += sim_params.dt) {
-        for (const auto& aircraft : vehicles) {
-            aircraft->update_state(charging_station, sim_params.dt);
+        for (auto& aircraft : vehicles) {
+            aircraft->update_state(sim_params.dt);
+            if (aircraft->get_state() == AircraftState::OutOfBattery) {
+                charging_station.add_to_queue(aircraft);
+                aircraft->set_state(AircraftState::InQueue);
+            }
         }
+        charging_station.update();
     }
 
     // Compute metrics for each vehicle and store by vehicle type
@@ -55,8 +60,10 @@ std::string format_time(double hours) {
 void print_row(std::string aircraft_name, Metrics metrics) {
     std::cout << std::setw(15) << aircraft_name
               << std::fixed << std::setprecision(1)
+              << std::setw(15) << metrics.number_flights
               << std::setw(18) << format_time(metrics.avg_flight_time)
-              << std::setw(20) << metrics.avg_flight_distance
+              << std::setw(22) << metrics.avg_flight_distance
+              << std::setw(15) << metrics.number_charges
               << std::setw(18) << format_time(metrics.avg_charging_time)
               << std::setw(10) << static_cast<int>(metrics.total_faults)
               << std::setw(18) << metrics.total_passenger_miles << std::endl;
@@ -67,9 +74,11 @@ void print_results(std::vector<std::vector<Metrics>>& metrics) {
 
     // Print table header
     std::cout << std::setw(15) << "Name"
+              << std::setw(15) << "Num Flights"
               << std::setw(18) << "Avg Flight Time"
-              << std::setw(20) << "Avg Flight Distance"
-              << std::setw(18) << "Avg Charging Time"
+              << std::setw(22) << "Avg Flight Distance"
+              << std::setw(15) << "Num Charges"
+              << std::setw(18) << "Avg Charge Time"
               << std::setw(10) << "Faults"
               << std::setw(18) << "Passenger Miles" << std::endl;
 
