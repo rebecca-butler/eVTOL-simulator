@@ -49,29 +49,37 @@ Overall, the simulator was designed to be modular and easy to test and extend by
 A small set of unit tests are provided using the GTest framework. The tests are focused on the Aircraft class, including the flying, charging, and state transition capabilities. The entire simulation was also run to verify that the metrics and behavior matched what was expected.
 
 ## Simulation Results
-Sample output from one run of the simulation is presented below.
+Sample output from one run of the simulation is presented below. The first table shows metrics for each aircraft individually, and the second shows total metrics for each type.
 
            Name    Num Flights   Avg Flight Time   Avg Flight Distance    Num Charges   Avg Charge Time    Faults   Passenger Miles
         Alpha 0              1              1:40                 200.0              1              0:10         1             800.0
-        Alpha 1              1              1:40                 200.0              0              0:00         0             800.0
-        Alpha 2              1              1:40                 200.0              0              0:00         0             800.0
-        Alpha 3              1              1:40                 200.0              0              0:00         0             800.0
-        Bravo 0              2              0:40                  66.7              1              0:12         1             666.7
+        Alpha 1              1              1:40                 200.0              0              0:00         1             800.0
+        Alpha 2              1              1:40                 200.0              0              0:00         1             800.0
+        Alpha 3              1              1:40                 200.0              0              0:00         1             800.0
+        Bravo 0              2              0:40                  66.7              1              0:12         0             666.7
         Bravo 1              2              0:40                  66.7              1              0:12         0             666.7
         Bravo 2              2              0:40                  66.7              1              0:12         0             666.7
         Bravo 3              2              0:40                  66.7              1              0:12         0             666.7
-        Bravo 4              2              0:37                  62.0              1              0:12         1             620.3
-      Charlie 0              2              0:37                 100.0              1              0:48         1             600.3
+        Bravo 4              2              0:37                  62.0              1              0:12         0             620.3
+      Charlie 0              2              0:37                 100.0              1              0:48         0             600.3
       Charlie 1              2              0:37                 100.0              1              0:48         0             600.3
       Charlie 2              2              0:37                 100.0              1              0:48         0             600.3
       Charlie 3              2              0:37                 100.0              1              0:48         0             600.3
       Charlie 4              2              0:37                 100.0              1              0:48         0             600.3
         Delta 0              1              1:06                 100.0              1              0:28         0             200.0
         Delta 1              1              1:06                 100.0              1              0:16         0             200.0
-         Echo 0              2              0:40                  20.0              1              0:18         2              80.2
-         Echo 1              2              0:40                  20.0              1              0:18         0              80.1
-         Echo 2              2              0:34                  17.0              1              0:18         2              68.1
-         Echo 3              2              0:31                  15.5              1              0:18         0              62.1
+         Echo 0              2              0:40                  20.0              1              0:18         0              80.2
+         Echo 1              2              0:40                  20.0              1              0:18         1              80.1
+         Echo 2              2              0:34                  17.0              1              0:18         3              68.1
+         Echo 3              2              0:31                  15.5              1              0:18         2              62.1
+
+           Name    Num Flights   Avg Flight Time   Avg Flight Distance    Num Charges   Avg Charge Time    Faults   Passenger Miles
+    Alpha Total              4              1:40                 200.0              1              0:02         4            3200.0
+    Bravo Total             10              0:39                  65.7              5              0:12         0            3286.9
+  Charlie Total             10              0:37                 100.0              5              0:48         0            3001.3
+    Delta Total              2              1:06                 100.0              2              0:22         0             400.0
+     Echo Total              8              0:36                  18.2              4              0:18         6             290.6
+
 
 ## Future Considerations
 If this code were to be used commercially, a number of improvements could be made:
